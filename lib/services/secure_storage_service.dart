@@ -5,9 +5,9 @@ class SecureStoreService {
 
   final _storage = const FlutterSecureStorage();
 
-  Future<String?> _get({required String key}) {
-    return _storage.read(key: key);
-  }
+  // Future<String?> _get({required String key}) {
+  //   return _storage.read(key: key);
+  // }
 
   Future<void> _store({required String key, required String? value}) {
     if (value == null) {

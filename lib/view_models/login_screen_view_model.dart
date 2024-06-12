@@ -25,6 +25,8 @@ abstract class LoginScreenViewModelOutput {
 
   Stream<String> get snackBarMessage;
 
+  Stream<String?> get emailTextFieldErrorMessage;
+
   Stream<String?> get shoudOpenListScreen;
 }
 
@@ -40,11 +42,25 @@ class LoginScreenViewModel
         LoginScreenViewModelInput,
         LoginScreenViewModelOutput {
   LoginScreenViewModel(this._networkService) {
+    emailTextFieldErrorMessage = _email.map(
+      (email) {
+        final emailRegex =
+            RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+        if (email == '') {
+          return 'please fill email';
+        } else if (emailRegex.hasMatch(email)) {
+          return null;
+        } else {
+          return 'invalid email';
+        }
+      },
+    );
+
     submitButtonModel = Rx.combineLatest2(
-      _email,
+      emailTextFieldErrorMessage,
       _password,
-      (username, password) {
-        final isEnabled = username != '' && password != '';
+      (errorMessage, password) {
+        final isEnabled = errorMessage == null && password != '';
         return SubmitButtonModel(
             isEnabled: isEnabled,
             icon: isEnabled ? Symbols.check : Symbols.clear,
@@ -121,6 +137,9 @@ class LoginScreenViewModel
 
   @override
   late final Stream<String?> shoudOpenListScreen;
+
+  @override
+  late final Stream<String?> emailTextFieldErrorMessage;
 }
 
 class SubmitButtonModel {

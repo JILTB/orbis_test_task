@@ -28,28 +28,3 @@ class ResultStreamTransformer<S, T>
     });
   }
 }
-
-class WhenSuccess<T> extends StreamTransformerBase<Result<T>, T> {
-  @override
-  Stream<T> bind(Stream<Result<T>> stream) {
-    return stream
-        .where((r) => r is ResultSuccess<T>)
-        .map((r) => (r as ResultSuccess<T>).data);
-  }
-}
-
-class WhenError<T> extends StreamTransformerBase<Result<T>, AppError?> {
-  @override
-  Stream<AppError?> bind(Stream<Result<T>> stream) {
-    return stream
-        .where((r) => r is ResultError)
-        .map((r) => (r as ResultError).error);
-  }
-}
-
-class IsLoading<T> extends StreamTransformerBase<Result<T>, bool> {
-  @override
-  Stream<bool> bind(Stream<Result<T>> stream) {
-    return stream.map((r) => r is ResultLoading);
-  }
-}

@@ -46,16 +46,34 @@ class _LoginScreenState extends State<LoginScreen> with BaseScreenMixin {
             _buildLoginForm(),
             _buildSubmitButton(),
             _buildLoadingWheel(),
+            const SizedBox(
+              height: 100,
+            ),
+            _buildCredentials(),
           ],
         ),
       );
 
   Widget _buildLoginForm() => Column(
         children: [
-          TextField(
-            onChanged: _viewModel.input.setEmail,
+          StreamBuilder<String?>(
+              stream: _viewModel.output.emailTextFieldErrorMessage,
+              initialData: null,
+              builder: (context, snapshot) {
+                return TextField(
+                  decoration: InputDecoration(
+                      errorText: snapshot.data,
+                      label: const Text('Email'),
+                      hintText: 'Please type email'),
+                  onChanged: _viewModel.input.setEmail,
+                );
+              }),
+          const SizedBox(
+            height: 50,
           ),
           TextField(
+            decoration: const InputDecoration(
+                label: Text('Password'), hintText: 'Please type password'),
             onChanged: _viewModel.input.setPassword,
           )
         ],
@@ -67,11 +85,29 @@ class _LoginScreenState extends State<LoginScreen> with BaseScreenMixin {
           isEnabled: false, icon: Symbols.abc, text: 'cant submit'),
       builder: (context, snapshot) {
         return snapshot.hasData
-            ? TextButton.icon(
-                onPressed:
-                    snapshot.data!.isEnabled ? _viewModel.input.submit : null,
-                label: Text(snapshot.data!.text),
-                icon: Icon(snapshot.data!.icon),
+            ? Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: TextButton.icon(
+                  onPressed:
+                      snapshot.data!.isEnabled ? _viewModel.input.submit : null,
+                  label: Text(
+                    snapshot.data!.text,
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                  icon: Icon(
+                    snapshot.data!.icon,
+                    color: Colors.black,
+                  ),
+                  style: TextButton.styleFrom(
+                      foregroundColor: Colors.green.shade300,
+                      backgroundColor: Colors.green.shade300,
+                      disabledBackgroundColor: Colors.white,
+                      disabledForegroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      fixedSize: const Size(100, 50),
+                      shape: const BeveledRectangleBorder(
+                          borderRadius: BorderRadius.zero)),
+                ),
               )
             : const SizedBox.shrink();
       });
@@ -88,4 +124,18 @@ class _LoginScreenState extends State<LoginScreen> with BaseScreenMixin {
                 : const SizedBox.shrink()
             : const SizedBox.shrink();
       });
+
+  Widget _buildCredentials() => const Column(
+        children: [
+          Text('Credentials to login'),
+          SizedBox(
+            height: 10,
+          ),
+          SelectableText('eve.holt@reqres.in'),
+          SizedBox(
+            height: 10,
+          ),
+          SelectableText('cityslicka')
+        ],
+      );
 }

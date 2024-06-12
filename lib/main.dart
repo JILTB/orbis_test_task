@@ -14,8 +14,9 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: TestApp(),
+    return MaterialApp(
+      theme: _themeData,
+      home: const TestApp(),
     );
   }
 }
@@ -76,3 +77,8 @@ class _TestAppState extends State<TestApp> {
         settings: settings,
       );
 }
+
+ThemeData get _themeData => ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+    );

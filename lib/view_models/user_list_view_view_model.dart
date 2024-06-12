@@ -9,7 +9,7 @@ import 'package:rxdart/rxdart.dart';
 import 'base_view_model.dart';
 
 abstract class UserListViewModelInput {
-  void loadAdditionalData(int page);
+  void loadUserList(int page);
 
   void logout();
 }
@@ -17,9 +17,9 @@ abstract class UserListViewModelInput {
 abstract class UserListViewModelOutput {
   Stream<List<Data>?> get userList;
 
-  Stream<bool> get isLoading;
-
   Stream<bool> get shouldPop;
+
+  Stream<String?> get toastMessage;
 }
 
 abstract class UserListViewModelType extends BaseViewModel {
@@ -38,20 +38,28 @@ class UserListViewModel
     this._secureStoreService,
   ) {
     final loadAnyData = _loadAdditionalDataTrigger
-        .asyncMap((page) => _networkService.load(page))
+        .asyncMap((page) async => _networkService.load(page))
         .shareReplay(maxSize: 1);
-
     loadAnyData.whereSuccess();
 
     userList = loadAnyData.whereSuccess().shareReplay(maxSize: 1);
 
-    isLoading = loadAnyData.isLoading();
+    toastMessage = Rx.merge(
+      [
+        loadAnyData.whereError().map((error) => error.description),
+        userList
+            .whereNotNull()
+            .map((list) => list.isEmpty ? 'no more data to load' : null)
+      ],
+    );
 
-    shouldPop = _logoutTrigger.map((shouldPop) {
-      _secureStoreService.setToken(null);
-      log('token Cleared');
-      return true;
-    });
+    shouldPop = _logoutTrigger.map(
+      (shouldPop) {
+        _secureStoreService.setToken(null);
+        log('token Cleared');
+        return true;
+      },
+    );
   }
 
   final _loadAdditionalDataTrigger = BehaviorSubject<int>();
@@ -67,7 +75,7 @@ class UserListViewModel
   UserListViewModelOutput get output => this;
 
   @override
-  void loadAdditionalData(int page) {
+  void loadUserList(int page) {
     _loadAdditionalDataTrigger.add(page);
   }
 
@@ -86,8 +94,8 @@ class UserListViewModel
   late final Stream<List<Data>?> userList;
 
   @override
-  late final Stream<bool> isLoading;
+  late final Stream<bool> shouldPop;
 
   @override
-  late final Stream<bool> shouldPop;
+  late final Stream<String?> toastMessage;
 }

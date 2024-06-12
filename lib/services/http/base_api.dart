@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:orbis_test_task/misc/errors.dart';
 import 'package:orbis_test_task/misc/result.dart';
+import 'package:orbis_test_task/models/api_error_model.dart';
 import 'package:orbis_test_task/models/network/requests/base_request_model.dart';
 
 import 'http_client.dart';
@@ -72,12 +73,7 @@ class BaseApi {
         return const ApiError(
             statusCode: 0, description: 'No internet connection');
       }
-      late String description;
-      try {
-        description = e.response!.data['Message'] as String;
-      } catch (_) {
-        description = e.response!.data.toString();
-      }
+      try {} catch (_) {}
       String? reasons;
       try {
         reasons = e.response!.data['ModelState']?['']?[0];
@@ -85,7 +81,10 @@ class BaseApi {
       return ApiError(
         statusCode: e.response!.statusCode!,
         statusMessage: e.response!.statusMessage,
-        description: description,
+        description:
+            (ApiErrorModel.fromJson(e.response!.data! as Map<String, Object?>))
+                    .error ??
+                '',
         reason: reasons,
       );
     }

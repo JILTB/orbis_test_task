@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:orbis_test_task/di/di.dart';
 import 'package:orbis_test_task/mixins/base_screen_mixin.dart';
 import 'package:orbis_test_task/models/user_list_model.dart';
@@ -33,26 +32,42 @@ class _UserListScreenState extends State<UserListScreen> with BaseScreenMixin {
   void initState() {
     super.initState();
 
-    _viewModel.input.loadAdditionalData(page);
+    _viewModel.input.loadUserList(page);
 
     _subscriptions
-      ..add(_viewModel.output.isLoading.listen((loading) {
-        setState(() {
-          isLoading = loading;
-          page++;
-        });
-      }))
-      ..add(_viewModel.output.shouldPop.listen((shouldPop) {
-        if (shouldPop) {
-          Navigator.of(context).popAndPushNamed(LoginScreen.route);
-        }
-      }));
+      ..add(
+        _viewModel.output.shouldPop.listen(
+          (shouldPop) {
+            if (shouldPop) {
+              Navigator.of(context).popAndPushNamed(LoginScreen.route);
+            }
+          },
+        ),
+      )
+      ..add(
+        _viewModel.output.userList.listen(
+          (list) {
+            if (list != null && list.isNotEmpty) {
+              setState(() {
+                userList.addAll(list);
+              });
+            }
+          },
+        ),
+      )
+      ..add(_viewModel.output.toastMessage.listen(
+          (message) => message != null ? showSnackMessage(message) : null));
 
-    _controller.addListener(() {
-      if (_controller.position.maxScrollExtent == _controller.offset) {
-        _viewModel.input.loadAdditionalData(page);
-      }
-    });
+    _controller.addListener(
+      () {
+        if (_controller.position.maxScrollExtent == _controller.offset) {
+          setState(() {
+            page++;
+          });
+          _viewModel.input.loadUserList(page);
+        }
+      },
+    );
   }
 
   @override
@@ -63,71 +78,47 @@ class _UserListScreenState extends State<UserListScreen> with BaseScreenMixin {
   }
 
   @override
-  Widget buildBody(BuildContext context) => StreamBuilder<List<Data>?>(
-        stream: _viewModel.output.userList,
-        initialData: const [],
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            userList.addAll(snapshot.data!);
-          }
-          return ListView.separated(
-            separatorBuilder: (context, index) => const SizedBox(
-              height: 10,
-            ),
-            padding: const EdgeInsets.all(8),
-            physics: const AlwaysScrollableScrollPhysics(),
-            controller: _controller,
-            itemCount: userList.length + 1,
-            itemBuilder: (context, index) {
-              if (index < userList.length) {
-                return _buildListItem(
-                  userList[index],
-                );
-              } else {
-                return isLoading
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: RepaintBoundary(
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    : const SizedBox.shrink();
-              }
-            },
-          );
-        },
-      );
+  Widget buildBody(BuildContext context) => _buildListView();
 
-  Widget _buildListItem(Data data) => Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8.0),
-            child: Image.network(
-              data.avatar ?? '',
-              fit: BoxFit.fill,
-            ),
+  ListView _buildListView() {
+    return ListView.separated(
+      separatorBuilder: (context, index) => const SizedBox(
+        height: 10,
+      ),
+      padding: const EdgeInsets.all(15),
+      physics: const AlwaysScrollableScrollPhysics(),
+      controller: _controller,
+      itemCount: userList.length,
+      itemBuilder: (context, index) {
+        return _buildListItem(
+          userList[index],
+        );
+      },
+    );
+  }
+
+  Widget _buildListItem(Data data) => ListTile(
+        trailing: ClipRRect(
+          borderRadius: BorderRadius.circular(5.0),
+          child: Image.network(
+            data.avatar ?? '',
+            fit: BoxFit.fill,
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  '${data.firstName} ${data.lastName}',
-                  style: const TextStyle(fontSize: 20),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  data.email ?? '',
-                  style: const TextStyle(fontSize: 15),
-                ),
-              ),
-            ],
-          )
-        ],
+        ),
+        title: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            '${data.firstName} ${data.lastName}',
+            style: const TextStyle(fontSize: 20),
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            data.email ?? '',
+            style: const TextStyle(fontSize: 15),
+          ),
+        ),
       );
 
   Widget _buildLogOutButton() => Padding(
@@ -137,7 +128,7 @@ class _UserListScreenState extends State<UserListScreen> with BaseScreenMixin {
           highlightColor: Colors.transparent,
           splashColor: Colors.transparent,
           splashFactory: NoSplash.splashFactory,
-          child: const Icon(Symbols.clear),
+          child: const Text('logout'),
         ),
       );
 }
